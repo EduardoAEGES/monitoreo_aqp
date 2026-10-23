@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitoreo de visitas a sede</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --board:#2A322E;
+  --board-2:#242B28;
+  --wood:#6B4A2B;
+  --chalk:#F0EDE4;
+  --chalk-2:rgba(240,237,228,.66);
+  --chalk-3:rgba(240,237,228,.34);
+  --rule:rgba(240,237,228,.26);
+  --amarillo:#F3D17A;
+  --verde:#9FD6A8;
+  --rojo:#E8958C;
+  box-sizing:border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top: env(safe-area-inset-top, 0px); -webkit-text-size-adjust:100%}
+body{
+  margin:0; color:var(--chalk); font-family:"Patrick Hand",system-ui,sans-serif;
+  font-size:17px; line-height:1.4;
+  background-color:var(--board);
+  background-image:
+    radial-gradient(ellipse 70% 55% at 22% 18%, rgba(255,255,255,.055), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 82% 72%, rgba(255,255,255,.04), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.42) 100%),
+    repeating-linear-gradient(97deg, rgba(255,255,255,.018) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(8deg, rgba(0,0,0,.05) 0 3px, transparent 3px 9px);
+  background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--board-2);z-index:40}
+h1,h2,.mano{font-family:"Caveat",cursive}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
+  background:linear-gradient(180deg,var(--board-2),rgba(36,43,40,.94));
+  border-bottom:3px double var(--rule); backdrop-filter:blur(3px)}
+.hd{max-width:900px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+h1{font-size:31px;font-weight:700;margin:0;letter-spacing:.01em;text-shadow:0 1px 0 rgba(255,255,255,.18)}
+.reloj{margin-left:auto;font-family:"Caveat";font-size:25px;font-weight:600;color:var(--chalk-2)}
+.dias{display:flex;gap:5px;flex-wrap:wrap;width:100%}
+.dia{appearance:none;background:none;border:2px solid var(--chalk-3);color:var(--chalk-2);
+  font:600 17px/1 "Caveat";padding:7px 15px;border-radius:14px 11px 15px 10px;cursor:pointer}
+.dia[aria-pressed="true"]{background:var(--chalk);color:var(--board);border-color:var(--chalk)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px dashed var(--amarillo);outline-offset:3px}
+.tools{display:flex;gap:7px;width:100%;flex-wrap:wrap;align-items:center}
+.tools input[type="search"],.tools select{font:400 15px/1 "Patrick Hand";padding:8px 10px;
+  border:2px solid var(--chalk-3);border-radius:9px;background:rgba(0,0,0,.18);color:var(--chalk)}
+.tools input[type="search"]{flex:1 1 170px;min-width:130px}
+.tools select option{background:#2A322E;color:#F0EDE4}
+.tiza{appearance:none;background:none;border:2px solid var(--chalk-3);color:var(--chalk-2);
+  font:400 15px/1 "Patrick Hand";padding:9px 13px;border-radius:12px 9px 13px 10px;cursor:pointer}
+.tiza[aria-pressed="true"]{background:var(--chalk);color:var(--board);border-color:var(--chalk)}
+
+main{max-width:900px;margin:0 auto;padding:6px 16px 90px}
+
+/* ---- momentos ---- */
+.panel{margin-top:18px;border:2px solid var(--chalk-3);border-radius:16px 12px 18px 11px;padding:13px 14px 15px;background:rgba(0,0,0,.14)}
+.panel>h2{font-size:26px;margin:0 0 2px;font-weight:700}
+.panel>p{margin:0 0 11px;font-size:15px;color:var(--chalk-2)}
+.momentos{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
+.mom{border:2px solid var(--chalk-3);border-radius:11px 9px 12px 8px;padding:10px 11px;display:flex;flex-direction:column;gap:3px}
+.mom .t{font:700 22px/1 "Caveat";color:var(--chalk)}
+.mom .q{font-size:14.5px;color:var(--chalk-2);flex:1}
+.mom.activo{border-color:var(--amarillo);box-shadow:0 0 0 1px var(--amarillo), 0 0 18px rgba(243,209,122,.22)}
+.mom.activo .t{color:var(--amarillo)}
+.mom.pasado{opacity:.5}
+.mom.listo{border-color:var(--verde)}
+.mom .prog{font-size:14px;color:var(--chalk-2)}
+.campana{appearance:none;background:none;border:2px solid var(--chalk-3);cursor:pointer;
+  font-size:19px;line-height:1;padding:7px 11px;border-radius:11px 8px 12px 9px;
+  margin-top:6px;align-self:flex-start;filter:grayscale(1) opacity(.55)}
+.campana[aria-pressed="true"]{border-color:var(--amarillo);filter:none}
+.mom.listo .prog{color:var(--verde)}
+.mom .marca{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:14px;color:var(--chalk-2);cursor:pointer}
+input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:21px;height:21px;margin:0;flex:none;
+  border:2px solid var(--chalk-3);border-radius:4px 3px 5px 3px;background:none;cursor:pointer;position:relative}
+input[type="checkbox"]:checked{border-color:var(--verde)}
+input[type="checkbox"]:checked::after{content:"✓";position:absolute;inset:-6px 0 0 1px;
+  font:700 21px/1 "Caveat";color:var(--verde)}
+.reportar{display:inline-flex;align-items:center;gap:8px;margin-top:12px;
+  font:700 23px/1 "Caveat";color:var(--board);background:var(--chalk);
+  border:2px solid var(--chalk);border-radius:14px 10px 16px 11px;padding:10px 20px;text-decoration:none}
+.reportar:hover{background:var(--amarillo);border-color:var(--amarillo)}
+.acciones{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.link{font:400 15px/1 "Patrick Hand";color:var(--chalk-3);text-decoration:underline;
+  text-underline-offset:4px;text-decoration-style:dotted}
+.link:hover{color:var(--chalk-2)}
+
+/* ---- lista ---- */
+.bloque{margin-top:22px}
+.encab{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.encab b{font:700 25px/1 "Caveat"}
+.encab i{flex:1;height:0;border-top:2px dashed var(--rule)}
+.encab em{font-style:normal;font:600 17px/1 "Caveat";color:var(--amarillo)}
+.clase{display:grid;grid-template-columns:112px 1fr auto auto;gap:12px;align-items:center;
+  border:2px solid var(--chalk-3);border-radius:11px 9px 12px 8px;padding:10px 13px;margin-bottom:6px}
+.checks{display:flex;gap:6px}
+.checks label{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
+  font:400 12px/1 "Patrick Hand";color:var(--chalk-3)}
+.checks input:checked + i{color:var(--verde)}
+.checks i{font-style:normal}
+.obs{appearance:none;background:none;border:2px solid var(--chalk-3);color:var(--chalk-3);
+  font:400 13px/1 "Patrick Hand";padding:7px 9px;border-radius:9px 7px 10px 7px;cursor:pointer;white-space:nowrap}
+.obs[aria-pressed="true"]{border-color:var(--rojo);color:var(--rojo)}
+.clase.falta{border-color:var(--rojo)}
+.clase.ahora{border-color:var(--verde);background:rgba(159,214,168,.08)}
+.clase.pasada{opacity:.46}
+.clase.hecha .curso{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--chalk-3)}
+.aula{font:700 20px/1.1 "Caveat"}
+.aula span{display:block;font:400 13.5px/1.3 "Patrick Hand";color:var(--chalk-2)}
+.curso{font-size:16.5px}
+.doc{font-size:14.5px;color:var(--chalk-2)}
+.sec{font:700 19px/1 "Caveat";color:var(--chalk-2);border:2px solid var(--chalk-3);border-radius:7px 5px 8px 6px;padding:5px 7px;white-space:nowrap}
+.nombre{font:400 14.5px/1.2 "Patrick Hand";color:var(--chalk);background:rgba(0,0,0,.22);
+  border:2px solid var(--chalk-3);border-radius:7px;padding:4px 7px;width:100%;max-width:330px;margin-top:2px}
+.vacia{margin-top:22px;padding:22px;text-align:center;color:var(--chalk-2);border:2px dashed var(--rule);border-radius:12px}
+.nota{margin-top:14px;font-size:14.5px;color:var(--chalk-2);border:2px dashed var(--rule);border-radius:10px;padding:9px 12px}
+#wsp{display:none;margin-top:14px;border:2px dashed var(--amarillo);border-radius:12px;padding:12px 13px}
+#wsp.on{display:block}
+#wsp textarea{width:100%;min-height:92px;resize:vertical;margin-top:9px;
+  font:400 15px/1.45 "Patrick Hand";color:var(--chalk);background:rgba(0,0,0,.25);
+  border:2px solid var(--chalk-3);border-radius:9px;padding:10px}
+footer{margin-top:28px;padding-top:12px;border-top:2px dashed var(--rule);font-size:14px;color:var(--chalk-3)}
+
+/* ---- aviso de alarma ---- */
+#alarma{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  z-index:50;display:none;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--board-2);border:3px solid var(--amarillo);border-radius:16px 12px 18px 11px;
+  padding:13px 15px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:876px;margin:0 auto}
+#alarma.on{display:flex}
+#alarma .txt{flex:1;min-width:180px}
+#alarma .txt b{display:block;font:700 25px/1.1 "Caveat";color:var(--amarillo)}
+@media (max-width:760px){
+  main{padding-left:12px;padding-right:12px}
+  .hd{padding:9px 12px;gap:7px}
+  h1{font-size:24px}
+  .reloj{font-size:22px}
+  .dias{gap:4px}
+  .dia{padding:8px 12px;font-size:16px}
+  .tools{gap:6px}
+  .tools input[type="search"]{flex:1 1 100%}
+  .tools select,.tiza{flex:1 1 46%;text-align:center;padding:11px 8px}
+  .momentos{grid-template-columns:1fr 1fr}
+  .clase{grid-template-columns:1fr auto;gap:8px;row-gap:7px;padding:11px 12px}
+  .aula{grid-row:1;grid-column:1}
+  .aula span{display:inline;margin-left:8px}
+  .sec{grid-row:1;grid-column:2;align-self:start}
+  .info{grid-column:1/3}
+  .checks{grid-column:1/3;justify-content:space-between;align-items:center;
+    border-top:2px dashed var(--rule);padding-top:8px}
+  .checks label{flex-direction:row;gap:6px;font-size:14px}
+  .checks input[type="checkbox"]{width:26px;height:26px}
+  .checks input[type="checkbox"]:checked::after{inset:-7px 0 0 2px;font-size:26px}
+  .reportar{width:100%;justify-content:center}
+}
+@media (max-width:400px){ .momentos{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{body{background:#fff;color:#000}header{position:static}.tools,.dias,#alarma{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <h1>Monitoreo de visitas a sede</h1>
+    <span class="reloj" id="reloj"></span>
+    <div class="dias" id="dias"></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Buscar aula, docente, curso o sección" aria-label="Buscar">
+      <select id="orden" aria-label="Ordenar por">
+        <option value="hora">Por horario</option>
+        <option value="aula">Por aula (A-Z)</option>
+        <option value="ciclo">Por ciclo</option>
+        <option value="piso">Por piso</option>
+      </select>
+      <select id="turno" aria-label="Turno">
+        <option value="">Todo el día</option>
+        <option value="M">Mañana</option>
+        <option value="T">Tarde</option>
+        <option value="N">Noche</option>
+      </select>
+      <button class="tiza" id="sonido" aria-pressed="false">Activar alarma</button>
+      <button class="tiza" id="editar" aria-pressed="false">Editar nombres</button>
+      <button class="tiza" id="limpiar">Borrar marcas</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Momentos del día</h2>
+    <p id="subPanel"></p>
+    <div class="momentos" id="momentos"></div>
+    <div class="acciones">
+      <button class="reportar" id="wspBtn2">Generar mensaje</button>
+      <a class="link" href="https://forms.gle/GK9A1BXMHHd7Ajz27" target="_blank" rel="noopener">Abrir el formulario</a>
+    </div>
+  </section>
+
+  <section id="wsp">
+    <strong class="mano" style="font-size:23px">Mensaje para José</strong>
+    <select id="wspMom" aria-label="Momento a reportar" style="margin-top:8px;width:100%;
+      font:400 15px/1 'Patrick Hand';padding:9px 10px;border:2px solid var(--chalk-3);
+      border-radius:9px;background:rgba(0,0,0,.18);color:var(--chalk)"></select>
+    <textarea id="wspTxt" readonly aria-label="Mensaje de WhatsApp"></textarea>
+    <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+      <button class="tiza" id="wspCopiar">Copiar</button>
+      <button class="tiza" id="wspCerrar">Cerrar</button>
+      <span id="wspOk" style="align-self:center;color:var(--verde)"></span>
+    </div>
+  </section>
+
+  <div id="aviso"></div>
+  <div id="cont"></div>
+  <footer id="pie"></footer>
+</main>
+
+<div id="alarma" role="alert">
+  <div class="txt"><b id="alTitulo"></b><span id="alDet"></span></div>
+  <button class="reportar" style="margin-top:0" id="alMensaje">Mensaje</button>
+  <a class="link" href="https://forms.gle/GK9A1BXMHHd7Ajz27" target="_blank" rel="noopener">Formulario</a>
+  <button class="tiza" id="alCerrar">Cerrar</button>
+</div>
+
+<script>
+const RAW = [{"origen":"INST","dia":"LUNES","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"1310","sec":"616M","curso":"DISEÑO DE NEGOCIOS DIGITALES P","aula":"AQP-L007A","ini":"08.30","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000374968","doc":"Percy Salvador Lope Rojas","clase":"1254","sec":"511M","curso":"FORMULACIÓN DE ESTADOS FINANCI","aula":"AQP-A405A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386248","doc":"Hugo Anibal Guzman Akao","clase":"1911","sec":"123M","curso":"DESARROLLO PROFESIONAL - I","aula":"AQP-A403A","ini":"08.30","fin":"11.30"},{"origen":"INST","dia":"LUNES","id":"0000386251","doc":"Hector Antonio Lopez Arenas","clase":"1328","sec":"616M","curso":"EXPERIENCIA FORMATIVA (ABB)-VI","aula":"AQP-L007A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"LUNES","id":"0000386255","doc":"Miguel Angel Chicata Miranda","clase":"743","sec":"221M","curso":"FOTOGRAFÍA","aula":"AQP-A504A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386265","doc":"Óscar Víctor Gallegos Condori","clase":"1139","sec":"418M","curso":"TÉCNICAS TRADICIONALES","aula":"AQP-A401A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386304","doc":"Victor Hugo Garcia Herrera","clase":"656","sec":"218M","curso":"OPERATIVIDAD ADUANERA","aula":"AQP-L003A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386310","doc":"Zulma Roque Quispe","clase":"2013","sec":"311M","curso":"TÉCNICAS DIGITALES","aula":"AQP-L001A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386473","doc":"Luis Angel Chire Quintanilla","clase":"1157","sec":"509M","curso":"EMPRENDIMIENTO: PLAN DE DESARR","aula":"AQP-L005A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386823","doc":"Lizbeth Katherine Zegarra Escobedo","clase":"1396","sec":"620M","curso":"CÁLCULO FINANCIERO Y TRIBUTARI","aula":"AQP-A505A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"1002","sec":"417M","curso":"GESTIÓN Y PLANEAMIENTO TRIBUTA","aula":"AQP-A501A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"LUNES","id":"0000419197","doc":"Luis Valentin Cruz Quispe","clase":"777","sec":"309M","curso":"INGLÉS PARA LA COM. EN LOS NEG","aula":"AQP-A602A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"MARTES","id":"0000059105","doc":"Estela Katherin Zea Ugarte","clase":"863","sec":"311M","curso":"TALLER DE IDENTIDAD VISUAL","aula":"AQP-L001A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000063351","doc":"Eduardo Luis Mamani Roque","clase":"1865","sec":"113M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A402A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"MARTES","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"982","sec":"416M","curso":"INNOVACIÓN Y DISEÑO CX","aula":"AQP-A501A","ini":"07.00","fin":"10.00"},{"origen":"INST","dia":"MARTES","id":"0000386005","doc":"John Rodrigo Salas Bonifáz","clase":"801","sec":"309M","curso":"GESTIÓN DE PROVEEDORES","aula":"AQP-A505A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386010","doc":"Carlos Alfonso Rios Ojeda","clase":"1598","sec":"618M","curso":"TOMA DE DECISIONES ESTRATÉGICA","aula":"AQP-A601A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"623","sec":"218M","curso":"CONTROL DE DESPACHO","aula":"AQP-A404A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"MARTES","id":"0000386140","doc":"Diego Enrique Arenas Barnett","clase":"507","sec":"219M","curso":"BANCA COMERCIAL","aula":"AQP-A405A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386238","doc":"Jose Miguel Romero Suca","clase":"1064","sec":"415M","curso":"EXPERIENCIA FORMATIVA (CNI)-IV","aula":"AQP-L003A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"MARTES","id":"0000386248","doc":"Hugo Anibal Guzman Akao","clase":"1898","sec":"123M","curso":"ADMINISTRACIÓN DE NEGOCIOS - I","aula":"AQP-A403A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"MARTES","id":"0000386304","doc":"Victor Hugo Garcia Herrera","clase":"1444","sec":"615M","curso":"ESTRATEGIAS DE COMERCIO INTER","aula":"AQP-A506A","ini":"07.00","fin":"10.00"},{"origen":"INST","dia":"MARTES","id":"0000386309","doc":"Guillermo Eduardo Osorio Rivera","clase":"1159","sec":"511M","curso":"EMPRENDIMIENTO: PLAN DE DESARR","aula":"AQP-L006A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386342","doc":"Marita Chavez Paredes","clase":"2011","sec":"221M","curso":"TÉCNICAS Y ESTILOS GRÁFICOS","aula":"AQP-A401A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386514","doc":"Ronald Mauricio Vizcarra Benavente","clase":"1659","sec":"621M","curso":"PROYECTO INTEGRADOR DE DISEÑO","aula":"AQP-L005A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"588","sec":"212N","curso":"CONTABILIDAD SUPERIOR","aula":"AQP-A402A","ini":"18.15","fin":"22.00"},{"origen":"INST","dia":"MARTES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"833","sec":"310M","curso":"GESTIÓN DE COSTOS","aula":"AQP-L007A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MARTES","id":"0000419197","doc":"Luis Valentin Cruz Quispe","clase":"1051","sec":"418M","curso":"INGLÉS APLICADO A PROYEC EMPR","aula":"AQP-A602A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000031238","doc":"Diana Raquel Gallegos Valdivia","clase":"1142","sec":"418M","curso":"EXPERIENCIA FORMATIVA (DGF)-IV","aula":"AQP-L001A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"1310","sec":"616M","curso":"DISEÑO DE NEGOCIOS DIGITALES P","aula":"AQP-L007A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000374968","doc":"Percy Salvador Lope Rojas","clase":"993","sec":"417M","curso":"EXPERIENCIA FORMATIVA (COT)-IV","aula":"AQP-L008A","ini":"08.30","fin":"10.00"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"1924","sec":"123M","curso":"COMERCIO EXTERIOR - I","aula":"AQP-A402A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386238","doc":"Jose Miguel Romero Suca","clase":"1090","sec":"415M","curso":"SUPPLY CHAIN MANAGEMENT","aula":"AQP-L004A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386248","doc":"Hugo Anibal Guzman Akao","clase":"1592","sec":"618M","curso":"EXPERIENCIA FORMATIVA (AGH)-VI","aula":"AQP-L002A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386255","doc":"Miguel Angel Chicata Miranda","clase":"743","sec":"221M","curso":"FOTOGRAFÍA","aula":"AQP-A504A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386265","doc":"Óscar Víctor Gallegos Condori","clase":"1139","sec":"418M","curso":"TÉCNICAS TRADICIONALES","aula":"AQP-A401A","ini":"08.30","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386304","doc":"Victor Hugo Garcia Herrera","clase":"656","sec":"218M","curso":"OPERATIVIDAD ADUANERA","aula":"AQP-L003A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386310","doc":"Zulma Roque Quispe","clase":"2013","sec":"311M","curso":"TÉCNICAS DIGITALES","aula":"AQP-L005A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386322","doc":"William Berman Cuno Sosa","clase":"1480","sec":"615M","curso":"FINANZAS INTERNACIONALES","aula":"AQP-A506A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386823","doc":"Lizbeth Katherine Zegarra Escobedo","clase":"1381","sec":"620M","curso":"ANÁLISIS E INTERPRETACIÓN DE E","aula":"AQP-L006A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"591","sec":"220M","curso":"CONTABILIDAD SUPERIOR","aula":"AQP-A405A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000386834","doc":"Roberto Alonzo Llajaruna Telles","clase":"965","sec":"416M","curso":"EXPERIENCIA FORMATIVA (ABB)-IV","aula":"AQP-L008A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000416158","doc":"Julisa Yrelsa Chavez Guillen","clase":"1197","sec":"509M","curso":"INGLÉS PARA NEGOCIOS INTERNACI","aula":"AQP-A501A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"MIÉRCOLES","id":"0000419197","doc":"Luis Valentin Cruz Quispe","clase":"777","sec":"309M","curso":"INGLÉS PARA LA COM. EN LOS NEG","aula":"AQP-A601A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"JUEVES","id":"0000059105","doc":"Estela Katherin Zea Ugarte","clase":"863","sec":"311M","curso":"TALLER DE IDENTIDAD VISUAL","aula":"AQP-L005A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000063351","doc":"Eduardo Luis Mamani Roque","clase":"601","sec":"220M","curso":"EXPERIENCIA FORMATIVA (COT)-II","aula":"AQP-L003A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"JUEVES","id":"0000063351","doc":"Eduardo Luis Mamani Roque","clase":"1865","sec":"113M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A402A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"JUEVES","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"612","sec":"218M","curso":"EXPERIENCIA DEL CLIENTE","aula":"AQP-A404A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000385987","doc":"Paul Miguel Perez Pastor","clase":"738","sec":"221M","curso":"EXPERIENCIA FORMATIVA (DGF)-II","aula":"AQP-L001A","ini":"07.45","fin":"09.15"},{"origen":"INST","dia":"JUEVES","id":"0000385987","doc":"Paul Miguel Perez Pastor","clase":"1666","sec":"621M","curso":"EXPERIENCIA FORMATIVA (DGF)-VI","aula":"AQP-L001A","ini":"17.30","fin":"19.00"},{"origen":"INST","dia":"JUEVES","id":"0000386010","doc":"Carlos Alfonso Rios Ojeda","clase":"1598","sec":"618M","curso":"TOMA DE DECISIONES ESTRATÉGICA","aula":"AQP-A405A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000386248","doc":"Hugo Anibal Guzman Akao","clase":"1898","sec":"123M","curso":"ADMINISTRACIÓN DE NEGOCIOS - I","aula":"AQP-A403A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"JUEVES","id":"0000386249","doc":"Gonzalo Leopoldo Riveros Ballón","clase":"1050","sec":"415M","curso":"INGLÉS APLICADO A PROYEC EMPR","aula":"AQP-A501A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"JUEVES","id":"0000386256","doc":"Rocio Noemi Herrera Espinoza","clase":"768","sec":"309M","curso":"EMPRENDIMIENTO: CREATIVIDAD E","aula":"AQP-A601A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000386265","doc":"Óscar Víctor Gallegos Condori","clase":"1139","sec":"418M","curso":"TÉCNICAS TRADICIONALES","aula":"AQP-A401A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000386304","doc":"Victor Hugo Garcia Herrera","clase":"1444","sec":"615M","curso":"ESTRATEGIAS DE COMERCIO INTER","aula":"AQP-L007A","ini":"07.00","fin":"10.00"},{"origen":"INST","dia":"JUEVES","id":"0000386514","doc":"Ronald Mauricio Vizcarra Benavente","clase":"1659","sec":"621M","curso":"PROYECTO INTEGRADOR DE DISEÑO","aula":"AQP-L006A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000386823","doc":"Lizbeth Katherine Zegarra Escobedo","clase":"1411","sec":"620M","curso":"EXPERIENCIA FORMATIVA (COT)-VI","aula":"AQP-A503A","ini":"09.15","fin":"10.45"},{"origen":"INST","dia":"JUEVES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"1002","sec":"417M","curso":"GESTIÓN Y PLANEAMIENTO TRIBUTA","aula":"AQP-L004A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000063351","doc":"Eduardo Luis Mamani Roque","clase":"598","sec":"212N","curso":"EXPERIENCIA FORMATIVA (COT)-II","aula":"AQP-L003A","ini":"18.15","fin":"19.45"},{"origen":"INST","dia":"VIERNES","id":"0000063351","doc":"Eduardo Luis Mamani Roque","clase":"1865","sec":"113M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A402A","ini":"08.30","fin":"10.00"},{"origen":"INST","dia":"VIERNES","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"982","sec":"416M","curso":"INNOVACIÓN Y DISEÑO CX","aula":"AQP-A501A","ini":"07.00","fin":"10.00"},{"origen":"INST","dia":"VIERNES","id":"0000374968","doc":"Percy Salvador Lope Rojas","clase":"1254","sec":"511M","curso":"FORMULACIÓN DE ESTADOS FINANCI","aula":"AQP-L004A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386005","doc":"John Rodrigo Salas Bonifáz","clase":"801","sec":"309M","curso":"GESTIÓN DE PROVEEDORES","aula":"AQP-L006A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"623","sec":"218M","curso":"CONTROL DE DESPACHO","aula":"AQP-A403A","ini":"07.00","fin":"10.00"},{"origen":"INST","dia":"VIERNES","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"634","sec":"218M","curso":"EXPERIENCIA FORMATIVA (CNI)-II","aula":"AQP-L003A","ini":"10.00","fin":"11.30"},{"origen":"INST","dia":"VIERNES","id":"0000386238","doc":"Jose Miguel Romero Suca","clase":"1090","sec":"415M","curso":"SUPPLY CHAIN MANAGEMENT","aula":"AQP-A405A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386310","doc":"Zulma Roque Quispe","clase":"2013","sec":"311M","curso":"TÉCNICAS DIGITALES","aula":"AQP-L005A","ini":"07.45","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386322","doc":"William Berman Cuno Sosa","clase":"1480","sec":"615M","curso":"FINANZAS INTERNACIONALES","aula":"AQP-A506A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386342","doc":"Marita Chavez Paredes","clase":"2011","sec":"221M","curso":"TÉCNICAS Y ESTILOS GRÁFICOS","aula":"AQP-A401A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386473","doc":"Luis Angel Chire Quintanilla","clase":"1157","sec":"509M","curso":"EMPRENDIMIENTO: PLAN DE DESARR","aula":"AQP-A505A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386641","doc":"Marisol Estrella Mayorga Salas","clase":"533","sec":"219M","curso":"EXPERIENCIA FORMATIVA (ABB)-II","aula":"AQP-L003A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"VIERNES","id":"0000386823","doc":"Lizbeth Katherine Zegarra Escobedo","clase":"1396","sec":"620M","curso":"CÁLCULO FINANCIERO Y TRIBUTARI","aula":"AQP-L002A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"VIERNES","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"833","sec":"310M","curso":"GESTIÓN DE COSTOS","aula":"AQP-A404A","ini":"07.00","fin":"09.15"},{"origen":"INST","dia":"VIERNES","id":"0000419197","doc":"Luis Valentin Cruz Quispe","clase":"1051","sec":"418M","curso":"INGLÉS APLICADO A PROYEC EMPR","aula":"AQP-A601A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"SÁBADO","id":"0000374898","doc":"Denisse Ivanna Salas Muñiz","clase":"612","sec":"218M","curso":"EXPERIENCIA DEL CLIENTE","aula":"AQP-A403A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"1924","sec":"123M","curso":"COMERCIO EXTERIOR - I","aula":"AQP-A402A","ini":"08.30","fin":"12.15"},{"origen":"INST","dia":"SÁBADO","id":"0000386140","doc":"Diego Enrique Arenas Barnett","clase":"507","sec":"219M","curso":"BANCA COMERCIAL","aula":"AQP-L003A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000386249","doc":"Gonzalo Leopoldo Riveros Ballón","clase":"1050","sec":"415M","curso":"INGLÉS APLICADO A PROYEC EMPR","aula":"AQP-A405A","ini":"07.00","fin":"11.30"},{"origen":"INST","dia":"SÁBADO","id":"0000386256","doc":"Rocio Noemi Herrera Espinoza","clase":"768","sec":"309M","curso":"EMPRENDIMIENTO: CREATIVIDAD E","aula":"AQP-A601A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000386304","doc":"Victor Hugo Garcia Herrera","clase":"1468","sec":"615M","curso":"EXPERIENCIA FORMATIVA (CNI)-VI","aula":"AQP-A501A","ini":"07.00","fin":"08.30"},{"origen":"INST","dia":"SÁBADO","id":"0000386309","doc":"Guillermo Eduardo Osorio Rivera","clase":"1159","sec":"511M","curso":"EMPRENDIMIENTO: PLAN DE DESARR","aula":"AQP-A505A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000386823","doc":"Lizbeth Katherine Zegarra Escobedo","clase":"1381","sec":"620M","curso":"ANÁLISIS E INTERPRETACIÓN DE E","aula":"AQP-L007A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"588","sec":"212N","curso":"CONTABILIDAD SUPERIOR","aula":"AQP-L003A","ini":"18.15","fin":"22.00"},{"origen":"INST","dia":"SÁBADO","id":"0000386828","doc":"Marilyn Dixie Astulle Pastor","clase":"591","sec":"220M","curso":"CONTABILIDAD SUPERIOR","aula":"AQP-L004A","ini":"07.00","fin":"10.45"},{"origen":"INST","dia":"SÁBADO","id":"0000416158","doc":"Julisa Yrelsa Chavez Guillen","clase":"1197","sec":"509M","curso":"INGLÉS PARA NEGOCIOS INTERNACI","aula":"AQP-A404A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"LUNES","id":"0000378306","doc":"Maria Alejandra Sanchez Acosta","clase":"321","sec":"310M","curso":"CREATIVIDAD E INNOVACIÓN","aula":"AQP-A506A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"LUNES","id":"0000386092","doc":"Jessica Pamela Oscco Alarcon","clase":"375","sec":"407N","curso":"EXPERIENCIAS FORMATIVAS EN SIT","aula":"AQP-L003A","ini":"18.15","fin":"19.45"},{"origen":"ESCU","dia":"LUNES","id":"0000386475","doc":"Helber Raul Figueroa Valenzuela","clase":"965","sec":"111M","curso":"FUNDAMENTOS DE MARKETING - I","aula":"AQP-A404A","ini":"08.30","fin":"10.45"},{"origen":"ESCU","dia":"LUNES","id":"0000386516","doc":"Katiuska Yolanda Concha Bedoya","clase":"936","sec":"116M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"08.30","fin":"12.15"},{"origen":"ESCU","dia":"LUNES","id":"0000386592","doc":"Marco Antonio Nuñez Nuñez","clase":"300","sec":"222M","curso":"EXPERIENCIA FORMATIVA EN SITUA","aula":"AQP-L004A","ini":"08.30","fin":"10.00"},{"origen":"ESCU","dia":"LUNES","id":"0000386659","doc":"Katherine Celia Rosa Begazo Guzman","clase":"284","sec":"201T","curso":"EXPERIENCIA FORMATIVA EN SITUA","aula":"AQP-L001A","ini":"15.15","fin":"16.45"},{"origen":"ESCU","dia":"LUNES","id":"0000386659","doc":"Katherine Celia Rosa Begazo Guzman","clase":"339","sec":"508M","curso":"PLAN DE DESARROLLO DEL NEGOCIO","aula":"AQP-A601A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"LUNES","id":"0000386794","doc":"Bernardo Marcos Damiani Navarrete","clase":"596","sec":"413M","curso":"PRICING: ESTRATEGIAS DE PRECIO","aula":"AQP-L006A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"LUNES","id":"0000386798","doc":"Ricardo Gonzales Concha","clase":"443","sec":"616M","curso":"EXPERIENCIAS FORMATIVAS EN SIT","aula":"AQP-A503A","ini":"08.30","fin":"10.00"},{"origen":"ESCU","dia":"LUNES","id":"0000386834","doc":"Roberto Alonzo Llajaruna Telles","clase":"308","sec":"308N","curso":"ANÁLISIS DE LA INFORMACIÓN FIN","aula":"AQP-L004A","ini":"19.00","fin":"22.00"},{"origen":"ESCU","dia":"MARTES","id":"0000386516","doc":"Katiuska Yolanda Concha Bedoya","clase":"943","sec":"111M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"08.30","fin":"10.45"},{"origen":"ESCU","dia":"MARTES","id":"0000386593","doc":"Alonso Miguel Ojeda Belon","clase":"410","sec":"616M","curso":"TOMA DE DECISIONES ESTRATÉGICA","aula":"AQP-L004A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"MARTES","id":"0000420858","doc":"Stephanie Carola Valdivia Apaza","clase":"322","sec":"311M","curso":"CREATIVIDAD E INNOVACIÓN","aula":"AQP-A603A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000374543","doc":"Jeanpier Brandol Ancorij Sanchez","clase":"394","sec":"616M","curso":"PROYECTO INTEGRADOR","aula":"AQP-A505A","ini":"07.00","fin":"11.30"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000376775","doc":"Felipe Edgardo Manrique Torreblanca","clase":"588","sec":"413M","curso":"LIDERAZGO ESTRATÉGICO","aula":"AQP-A602A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000378308","doc":"Miriam Margot Valeriano Quispe","clase":"973","sec":"117N","curso":"FUNDAMENTOS DE MARKETING - I","aula":"AQP-A502A","ini":"17.30","fin":"19.45"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000386222","doc":"David Joel Parizaca Chambi","clase":"951","sec":"117N","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"19.45","fin":"22.00"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000386516","doc":"Katiuska Yolanda Concha Bedoya","clase":"936","sec":"116M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"08.30","fin":"12.15"},{"origen":"ESCU","dia":"MIÉRCOLES","id":"0000386834","doc":"Roberto Alonzo Llajaruna Telles","clase":"296","sec":"215N","curso":"EXPERIENCIA FORMATIVA EN SITUA","aula":"AQP-L004A","ini":"18.15","fin":"19.45"},{"origen":"ESCU","dia":"JUEVES","id":"0000376775","doc":"Felipe Edgardo Manrique Torreblanca","clase":"299","sec":"221M","curso":"EXPERIENCIA FORMATIVA EN SITUA","aula":"AQP-L008A","ini":"08.30","fin":"10.00"},{"origen":"ESCU","dia":"JUEVES","id":"0000386475","doc":"Helber Raul Figueroa Valenzuela","clase":"689","sec":"223M","curso":"EXPERIENCIA FORMATIVA ESMKT-II","aula":"AQP-L008A","ini":"07.00","fin":"08.30"},{"origen":"ESCU","dia":"JUEVES","id":"0000386593","doc":"Alonso Miguel Ojeda Belon","clase":"410","sec":"616M","curso":"TOMA DE DECISIONES ESTRATÉGICA","aula":"AQP-A602A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"JUEVES","id":"0000386659","doc":"Katherine Celia Rosa Begazo Guzman","clase":"339","sec":"508M","curso":"PLAN DE DESARROLLO DEL NEGOCIO","aula":"AQP-L002A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"JUEVES","id":"0000386834","doc":"Roberto Alonzo Llajaruna Telles","clase":"308","sec":"308N","curso":"ANÁLISIS DE LA INFORMACIÓN FIN","aula":"AQP-L002A","ini":"19.00","fin":"22.00"},{"origen":"ESCU","dia":"VIERNES","id":"0000374543","doc":"Jeanpier Brandol Ancorij Sanchez","clase":"394","sec":"616M","curso":"PROYECTO INTEGRADOR","aula":"AQP-A503A","ini":"07.00","fin":"11.30"},{"origen":"ESCU","dia":"VIERNES","id":"0000376775","doc":"Felipe Edgardo Manrique Torreblanca","clase":"588","sec":"413M","curso":"LIDERAZGO ESTRATÉGICO","aula":"AQP-A602A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"VIERNES","id":"0000378308","doc":"Miriam Margot Valeriano Quispe","clase":"973","sec":"117N","curso":"FUNDAMENTOS DE MARKETING - I","aula":"AQP-A502A","ini":"19.00","fin":"21.15"},{"origen":"ESCU","dia":"VIERNES","id":"0000386475","doc":"Helber Raul Figueroa Valenzuela","clase":"965","sec":"111M","curso":"FUNDAMENTOS DE MARKETING - I","aula":"AQP-A502A","ini":"10.45","fin":"13.00"},{"origen":"ESCU","dia":"VIERNES","id":"0000386516","doc":"Katiuska Yolanda Concha Bedoya","clase":"943","sec":"111M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"08.30","fin":"10.45"},{"origen":"ESCU","dia":"VIERNES","id":"0000386592","doc":"Marco Antonio Nuñez Nuñez","clase":"298","sec":"220M","curso":"EXPERIENCIA FORMATIVA EN SITUA","aula":"AQP-L001A","ini":"07.00","fin":"08.30"},{"origen":"ESCU","dia":"VIERNES","id":"0000420858","doc":"Stephanie Carola Valdivia Apaza","clase":"322","sec":"311M","curso":"CREATIVIDAD E INNOVACIÓN","aula":"AQP-A603A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"SÁBADO","id":"0000376775","doc":"Felipe Edgardo Manrique Torreblanca","clase":"378","sec":"412M","curso":"EXPERIENCIAS FORMATIVAS EN SIT","aula":"AQP-L001A","ini":"08.30","fin":"10.00"},{"origen":"ESCU","dia":"SÁBADO","id":"0000378306","doc":"Maria Alejandra Sanchez Acosta","clase":"321","sec":"310M","curso":"CREATIVIDAD E INNOVACIÓN","aula":"AQP-A506A","ini":"07.00","fin":"10.00"},{"origen":"ESCU","dia":"SÁBADO","id":"0000386222","doc":"David Joel Parizaca Chambi","clase":"951","sec":"117N","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"19.00","fin":"21.15"},{"origen":"ESCU","dia":"SÁBADO","id":"0000386516","doc":"Katiuska Yolanda Concha Bedoya","clase":"936","sec":"116M","curso":"PENSAMIENTO LÓGICO - I","aula":"AQP-A502A","ini":"08.30","fin":"10.00"},{"origen":"ESCU","dia":"SÁBADO","id":"0000386794","doc":"Bernardo Marcos Damiani Navarrete","clase":"596","sec":"413M","curso":"PRICING: ESTRATEGIAS DE PRECIO","aula":"AQP-L006A","ini":"07.00","fin":"10.45"},{"origen":"ESCU","dia":"SÁBADO","id":"0000386834","doc":"Roberto Alonzo Llajaruna Telles","clase":"308","sec":"308N","curso":"ANÁLISIS DE LA INFORMACIÓN FIN","aula":"AQP-L004A","ini":"19.00","fin":"22.00"}];
+const FORM = "https://forms.gle/GK9A1BXMHHd7Ajz27";
+const DIAS = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
+const MEN = new Set(["de","del","la","las","el","los","y","e","o","u","en","a","al","con","por","para","un","una"]);
+const titulo = s => s.toLocaleLowerCase("es").replace(/(^|[\s(/-])([\p{L}][\p{L}'’.]*)/gu,
+  (m,a,w,i) => a + (i>0 && MEN.has(w) ? w : w.charAt(0).toLocaleUpperCase("es") + w.slice(1)));
+const min = s => { const p = String(s).replace(",",".").split("."); return (+p[0])*60 + (+(p[1]||0)); };
+const hhmm = v => String(Math.floor(v/60)).padStart(2,"0") + ":" + String(v%60).padStart(2,"0");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pisoDe = a => { const m = a.match(/-([AL])(\d)/); return !m ? "Otros" : (m[1]==="L" ? "Laboratorios" : "Piso " + m[2]); };
+
+const MOMENTOS = [
+  {id:"m1", num:"1", n:"1.er monitoreo", ini:6*60+50, fin:7*60,    q:"Docente en aula"},
+  {id:"m2", num:"2", n:"2.º monitoreo",  ini:7*60+10, fin:7*60+30, q:"Inicio de sesión"},
+  {id:"m3", num:"3", n:"3.er monitoreo", ini:8*60+30, fin:9*60,    q:"Break de 15 minutos"},
+  {id:"m4", num:"4", n:"4.º monitoreo",  ini:10*60+30,fin:10*60+45,q:"Cierre de sesiones"}
+];
+
+const datos = RAW.map(r => ({
+  id:r.id, dia:r.dia, aula:r.aula, seccion:r.sec,
+  ini:min(r.ini), fin:min(r.fin),
+  turno: /[MTN]$/.test(r.sec) ? r.sec.slice(-1) : "M",
+  ciclo:"Ciclo " + r.sec[0], piso:pisoDe(r.aula),
+  cursoN:titulo(r.curso), base:r.doc,
+  key:r.origen[0] + r.clase + r.dia
+}));
+
+const $ = id => document.getElementById(id);
+const hoy = new Date();
+const fecha = () => new Date().toISOString().slice(0,10);
+
+let marcas = new Set(), hitos = new Set(), faltas = new Set(), nombres = {};
+let alarmas = new Set(MOMENTOS.map(m => m.id));
+try { marcas = new Set(JSON.parse(localStorage.getItem("monitoreo:"+fecha()) || "[]")); } catch(e) {}
+try { hitos  = new Set(JSON.parse(localStorage.getItem("momentos:"+fecha()) || "[]")); } catch(e) {}
+try { faltas = new Set(JSON.parse(localStorage.getItem("faltas:"+fecha()) || "[]")); } catch(e) {}
+try { const a = localStorage.getItem("alarmas"); if(a) alarmas = new Set(JSON.parse(a)); } catch(e) {}
+try { nombres = JSON.parse(localStorage.getItem("docentes") || "{}"); } catch(e) {}
+const gMarcas  = () => { try { localStorage.setItem("monitoreo:"+fecha(), JSON.stringify([...marcas])); } catch(e) {} };
+const gHitos   = () => { try { localStorage.setItem("momentos:"+fecha(), JSON.stringify([...hitos])); } catch(e) {} };
+const gFaltas  = () => { try { localStorage.setItem("faltas:"+fecha(), JSON.stringify([...faltas])); } catch(e) {} };
+const gAlarmas = () => { try { localStorage.setItem("alarmas", JSON.stringify([...alarmas])); } catch(e) {} };
+const gNombres = () => { try { localStorage.setItem("docentes", JSON.stringify(nombres)); } catch(e) {} };
+const docente = c => nombres[c.id] || c.base;
+
+const diasOk = DIAS.filter(d => datos.some(x => x.dia === d));
+const est = { dia: diasOk.includes(DIAS[hoy.getDay()]) ? DIAS[hoy.getDay()] : diasOk[0],
+              q:"", turno:"M", orden:"hora", editar:false };
+const ahora = () => { const d = new Date(); return d.getHours()*60 + d.getMinutes(); };
+const esHoy = () => est.dia === DIAS[new Date().getDay()];
+
+/* ---------- alarma ---------- */
+let audio = null, sonando = false, disparadas = new Set();
+$("sonido").onclick = () => {
+  if(sonando){ sonando = false; $("sonido").setAttribute("aria-pressed","false"); $("sonido").textContent = "Activar alarma"; return; }
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state === "suspended") audio.resume();
+    sonando = true;
+    $("sonido").setAttribute("aria-pressed","true");
+    $("sonido").textContent = "Alarma activa";
+    pitar(1);
+  } catch(e){
+    sonando = true; $("sonido").setAttribute("aria-pressed","true"); $("sonido").textContent = "Alarma activa";
+  }
+};
+function pitar(veces){
+  if(!audio) return;
+  for(let i = 0; i < veces; i++){
+    const o = audio.createOscillator(), g = audio.createGain(), t0 = audio.currentTime + i*0.42;
+    o.type = "triangle"; o.frequency.setValueAtTime(880, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+    o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + 0.36);
+  }
+}
+$("alCerrar").onclick = () => $("alarma").classList.remove("on");
+function revisarAlarma(){
+  if(!sonando || !esHoy()) return;
+  const t = ahora();
+  for(const m of MOMENTOS){
+    if(alarmas.has(m.id) && t >= m.ini && t < m.ini + 2 && !disparadas.has(m.id)){
+      disparadas.add(m.id);
+      pitar(3);
+      $("alTitulo").textContent = m.n + " · " + hhmm(m.ini) + "–" + hhmm(m.fin);
+      $("alDet").textContent = m.q;
+      $("alarma").classList.add("on");
+    }
+  }
+}
+setInterval(() => { revisarAlarma(); if(!est.editar) render(); }, 20000);
+
+/* ---------- controles ---------- */
+$("dias").innerHTML = diasOk.map(d => `<button class="dia" data-d="${d}">${d[0]+d.slice(1).toLowerCase()}</button>`).join("");
+$("dias").onclick    = e => { const b = e.target.closest(".dia"); if(b){ est.dia = b.dataset.d; render(); } };
+$("turno").value = est.turno;
+$("q").oninput       = e => { est.q = e.target.value.trim().toLowerCase(); render(); };
+$("orden").onchange  = e => { est.orden = e.target.value; render(); };
+$("turno").onchange  = e => { est.turno = e.target.value; render(); };
+$("editar").onclick  = () => { est.editar = !est.editar; render(); };
+$("limpiar").onclick = () => { marcas.clear(); faltas.clear(); ultimoMom = null; gMarcas(); gFaltas(); render(); };
+
+$("momentos").addEventListener("click", e => {
+  const b = e.target.closest("[data-alarma]"); if(!b) return;
+  const id = b.dataset.alarma;
+  alarmas.has(id) ? alarmas.delete(id) : alarmas.add(id);
+  gAlarmas(); render();
+});
+$("cont").addEventListener("click", e => {
+  const b = e.target.closest(".obs"); if(!b) return;
+  faltas.has(b.dataset.k) ? faltas.delete(b.dataset.k) : faltas.add(b.dataset.k);
+  gFaltas(); render();
+});
+$("cont").addEventListener("change", e => {
+  const t = e.target;
+  if(t.type === "checkbox" && t.dataset.k){
+    const id = t.dataset.k + "|" + t.dataset.m;
+    t.checked ? marcas.add(id) : marcas.delete(id);
+    ultimoMom = t.dataset.m;
+    gMarcas(); render();
+  }
+  if(t.classList.contains("nombre")){
+    const v = t.value.trim();
+    if(v) nombres[t.dataset.id] = v; else delete nombres[t.dataset.id];
+    gNombres(); render();
+  }
+});
+$("cont").addEventListener("keydown", e => {
+  if(e.key === "Enter" && e.target.classList.contains("nombre")){ e.preventDefault(); e.target.blur(); }
+});
+
+/* ---------- mensaje de WhatsApp ---------- */
+const PLANTILLA = {
+  m1: { ok:"Hola José, buen día. Desde la sede Arequipa: todos los docentes llegaron en su hora.",
+        obs:"Hola José, buen día. Desde la sede Arequipa: los docentes llegaron en su hora," },
+  m2: { ok:"Segundo recorrido desde la sede Arequipa. Todo conforme, las sesiones iniciaron puntuales.",
+        obs:"Segundo recorrido desde la sede Arequipa. Las sesiones iniciaron conforme," },
+  m3: { ok:"Tercer recorrido desde la sede Arequipa. Break de 15 minutos conforme.",
+        obs:"Tercer recorrido desde la sede Arequipa. Break de 15 minutos conforme," },
+  m4: { ok:"Cuarto recorrido desde la sede Arequipa. Las sesiones cerraron en su horario.",
+        obs:"Cuarto recorrido desde la sede Arequipa. Las sesiones cerraron en su horario," }
+};
+let ultimoMom = null;
+function momentoSugerido(){
+  const L = ultima;
+  if(L.length){
+    // el bloque que se está marcando: el último tocado, si aún no se reportó
+    if(ultimoMom) return ultimoMom;
+    const completo = m => L.every(c => marcas.has(c.key+"|"+m.id));
+    const enCurso = MOMENTOS.find(m => !completo(m) && L.some(c => marcas.has(c.key+"|"+m.id)));
+    if(enCurso) return enCurso.id;
+    const pendiente = MOMENTOS.find(m => !completo(m));
+    if(pendiente) return pendiente.id;
+  }
+  if(!esHoy()) return "m1";
+  const t = ahora();
+  let id = "m1";
+  for(const m of MOMENTOS) if(t >= m.ini) id = m.id;
+  return id;
+}
+function mensaje(momId){
+  const sin = ultima.filter(c => faltas.has(c.key));
+  const pl = PLANTILLA[momId] || PLANTILLA.m1;
+  if(!sin.length) return pl.ok;
+  const lista = sin.map(c => `${c.aula.replace("AQP-","")} (${c.seccion})`).join(" y ");
+  return sin.length === 1
+    ? `${pl.obs} salvo en el aula ${lista}, donde no se presentó el docente ${docente(sin[0])}.`
+    : `${pl.obs} salvo en las aulas ${lista}, donde no se presentó el docente.`;
+}
+function pintarMensaje(){ $("wspTxt").value = mensaje($("wspMom").value); $("wspOk").textContent = ""; }
+$("wspMom").innerHTML = MOMENTOS.map(m => `<option value="${m.id}">${m.n} · ${m.q}</option>`).join("");
+$("wspMom").onchange = pintarMensaje;
+function abrirMensaje(id){
+  $("wspMom").value = id;
+  pintarMensaje();
+  $("wsp").classList.add("on");
+  $("wsp").scrollIntoView({block:"nearest"});
+  $("wspTxt").focus(); $("wspTxt").select();
+}
+$("wspBtn2").onclick = () => abrirMensaje(momentoSugerido());
+$("alMensaje").onclick = () => { $("alarma").classList.remove("on"); abrirMensaje(momentoSugerido()); };
+$("wspCerrar").onclick = () => $("wsp").classList.remove("on");
+$("wspCopiar").onclick = async () => {
+  const t = $("wspTxt"); t.focus(); t.select(); t.setSelectionRange(0, 99999);
+  let ok = false;
+  try { await navigator.clipboard.writeText(t.value); ok = true; } catch(e) {
+    try { ok = document.execCommand("copy"); } catch(e2) {}
+  }
+  $("wspOk").textContent = ok ? "Copiado" : "Selecciona el texto y copia con Ctrl+C";
+};
+
+/* ---------- render ---------- */
+function render(){
+  [...$("dias").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.d === est.dia));
+  $("editar").setAttribute("aria-pressed", est.editar);
+  $("editar").textContent = est.editar ? "Listo" : "Editar nombres";
+  const t = ahora(), vivo = esHoy() && !est.editar;
+  $("reloj").textContent = esHoy() ? hhmm(t) : est.dia[0] + est.dia.slice(1).toLowerCase();
+
+  const list = datos.filter(d => d.dia === est.dia
+      && (!est.turno || d.turno === est.turno)
+      && (!est.q || (d.aula+" "+docente(d)+" "+d.cursoN+" "+d.seccion).toLowerCase().includes(est.q)))
+    .sort((a,b) => {
+      if(est.orden === "aula")  return a.aula.localeCompare(b.aula) || a.ini-b.ini;
+      if(est.orden === "ciclo") return a.ciclo.localeCompare(b.ciclo) || a.ini-b.ini || a.aula.localeCompare(b.aula);
+      if(est.orden === "piso")  return (a.piso === "Laboratorios") - (b.piso === "Laboratorios")
+                                    || a.piso.localeCompare(b.piso) || a.ini-b.ini || a.aula.localeCompare(b.aula);
+      return a.ini-b.ini || a.fin-b.fin || a.aula.localeCompare(b.aula);
+    });
+  ultima = list;
+
+  $("subPanel").textContent = esHoy()
+    ? "Marca cada aula abajo y reporta el bloque cuando lo cierres. " + (sonando ? "La alarma avisa al empezar cada momento." : "Activa la alarma para que avise al empezar cada momento.")
+    : "Checklist de la visita. Marcas y alarma funcionan en el día de hoy.";
+
+  $("momentos").innerHTML = MOMENTOS.map(m => {
+    const hechas = list.filter(c => marcas.has(c.key+"|"+m.id)).length;
+    const listo = list.length > 0 && hechas === list.length;
+    const activo = esHoy() && t >= m.ini && t < m.fin, pasado = esHoy() && t >= m.fin;
+    return `<article class="mom ${activo?"activo":""} ${listo?"listo":""} ${pasado && !listo ? "pasado":""}">
+      <span class="t">${hhmm(m.ini)}–${hhmm(m.fin)}</span>
+      <span class="q"><strong>${m.n}</strong><br>${m.q}</span>
+      <span class="prog">${hechas}/${list.length} aulas</span>
+      <button class="campana" data-alarma="${m.id}" aria-pressed="${alarmas.has(m.id)}"
+        title="${alarmas.has(m.id) ? "Alarma activa para este momento" : "Alarma desactivada para este momento"}"
+        aria-label="${alarmas.has(m.id) ? "Desactivar" : "Activar"} alarma del ${m.n}">${alarmas.has(m.id) ? "🔔" : "🔕"}</button>
+    </article>`;
+  }).join("");
+
+  $("aviso").innerHTML = est.editar
+    ? `<div class="nota">Corrige el nombre del docente y presiona Enter. El cambio se aplica a todas sus clases y queda guardado en este dispositivo.</div>` : "";
+
+  if(!list.length){ $("cont").innerHTML = `<div class="vacia">No hay clases con estos filtros.</div>`; pie(0,0); return; }
+
+  const etiqueta = c => est.orden === "hora" ? hhmm(c.ini)
+                      : est.orden === "aula" ? c.aula
+                      : est.orden === "ciclo" ? c.ciclo : c.piso;
+  const grupos = [];
+  for(const c of list){
+    const et = etiqueta(c);
+    if(!grupos.length || grupos[grupos.length-1].et !== et) grupos.push({et, items:[]});
+    grupos[grupos.length-1].items.push(c);
+  }
+
+  $("cont").innerHTML = grupos.map(g => {
+    const enCurso = vivo && g.items.some(x => t >= x.ini && t < x.fin);
+    return `<section class="bloque"><div class="encab"><b>${esc(g.et)}</b><i></i>${enCurso?"<em>en curso</em>":""}</div>`
+      + g.items.map(c => {
+        const viva = vivo && t >= c.ini && t < c.fin, pasada = vivo && t >= c.fin;
+        const izq = est.orden === "aula" ? hhmm(c.ini) : c.aula;
+        const sub = est.orden === "hora" ? "hasta " + hhmm(c.fin) : hhmm(c.ini) + "–" + hhmm(c.fin);
+        const nom = est.editar
+          ? `<input class="nombre" data-id="${c.id}" value="${esc(docente(c))}" aria-label="Nombre del docente">`
+          : `<span class="doc">${esc(docente(c))}</span>`;
+        const hechos = MOMENTOS.filter(m => marcas.has(c.key+"|"+m.id)).length;
+        const falta = faltas.has(c.key);
+        return `<div class="clase ${viva?"ahora":""} ${pasada?"pasada":""} ${hechos===MOMENTOS.length?"hecha":""} ${falta?"falta":""}" data-k="${c.key}">
+          <span class="aula">${esc(izq)}<span>${sub}</span></span>
+          <span class="info"><span class="curso">${esc(c.cursoN)}</span><br>${nom}</span>
+          <span class="sec">${esc(c.seccion)}</span>
+          <span class="checks">${MOMENTOS.map(m => `<label title="${m.n} (${hhmm(m.ini)}–${hhmm(m.fin)}): ${m.q}">
+            <input type="checkbox" data-k="${c.key}" data-m="${m.id}" ${marcas.has(c.key+"|"+m.id)?"checked":""}
+                   aria-label="${m.n} en ${esc(c.aula)}"><i>${m.num}</i></label>`).join("")}
+            <button class="obs" data-k="${c.key}" aria-pressed="${falta}"
+              title="Reportar que no hay docente en el aula">${falta ? "Falta docente" : "Sin docente"}</button></span>
+        </div>`;
+      }).join("") + `</section>`;
+  }).join("");
+
+  pie(list.length, list.filter(c => MOMENTOS.every(m => marcas.has(c.key+"|"+m.id))).length);
+}
+let ultima = [];
+function pie(n,m){
+  $("pie").textContent = `${n} clase${n===1?"":"s"} · ${m} con los 4 monitoreos completos. Las marcas se reinician cada día; los nombres corregidos se conservan. Todo se guarda solo en este dispositivo.`;
+}
+render();
+</script>
+</body>
+</html>
